@@ -48,6 +48,17 @@ export default function Page() {
 
   const toggleSave = (title: string) => setSaved((current) => current.includes(title) ? current.filter((item) => item !== title) : [...current, title])
 
+  const unlockReveal = async () => {
+    try {
+      const response = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ purpose: 'reveal-vote' }) })
+      const data = await response.json()
+      if (!response.ok || !data.url) throw new Error(data.error ?? 'Checkout unavailable')
+      window.location.href = data.url
+    } catch {
+      setRevealed(false)
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#f5f4f0] text-[#1c1c1a]">
       <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-12">
@@ -80,7 +91,7 @@ export default function Page() {
         <section className="border-y border-black/10 py-10 sm:py-12">
           <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#df5c3e]"><span className="size-2 rounded-full bg-[#df5c3e]" /> Live pulse</p><h2 className="font-serif text-4xl tracking-[-0.05em] sm:text-5xl">The room is watching.</h2></div><span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/40">Audience-powered coverage</span></div>
           <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
-            <article className="relative overflow-hidden bg-[#243539] p-6 text-white sm:p-8"><div className="absolute inset-0 bg-gradient-to-br from-[#df5c3e]/20 to-transparent" /><div className="relative"><div className="mb-8 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.18em]"><span className="text-[#ffb19b]">Breaking dossier</span><span className="flex items-center gap-2"><span className="size-2 rounded-full bg-[#ffb19b]" /> Live</span></div><h3 className="max-w-xl font-serif text-3xl leading-none tracking-[-0.04em] sm:text-5xl">The pop star prenup everyone is decoding.</h3><p className="mt-4 max-w-lg text-sm leading-relaxed text-white/65">A leaked document has the internet reading between the lines. Vote to reveal the next verified detail.</p><div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center"><button onClick={() => { setLiveVotes((value) => value + 1); setRevealed(true) }} className="inline-flex items-center justify-center gap-2 bg-white px-5 py-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[#1c1c1a] transition hover:bg-[#ffb19b]">{revealed ? 'Reveal unlocked' : 'Vote to reveal'} <ArrowRight /></button><span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/55">{liveVotes.toLocaleString()} votes logged</span></div></div></article>
+            <article className="relative overflow-hidden bg-[#243539] p-6 text-white sm:p-8"><div className="absolute inset-0 bg-gradient-to-br from-[#df5c3e]/20 to-transparent" /><div className="relative"><div className="mb-8 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.18em]"><span className="text-[#ffb19b]">Breaking dossier</span><span className="flex items-center gap-2"><span className="size-2 rounded-full bg-[#ffb19b]" /> Live</span></div><h3 className="max-w-xl font-serif text-3xl leading-none tracking-[-0.04em] sm:text-5xl">The pop star prenup everyone is decoding.</h3><p className="mt-4 max-w-lg text-sm leading-relaxed text-white/65">A leaked document has the internet reading between the lines. Vote to reveal the next verified detail.</p><div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center"><button onClick={unlockReveal} className="inline-flex items-center justify-center gap-2 bg-white px-5 py-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[#1c1c1a] transition hover:bg-[#ffb19b]">{revealed ? 'Reveal unlocked' : 'Vote $1 to reveal'} <ArrowRight /></button><span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/55">{liveVotes.toLocaleString()} votes logged</span></div></div></article>
             <div className="flex flex-col justify-between border border-black/15 p-6 sm:p-8"><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#df5c3e]">What happens next</p><h3 className="mt-3 font-serif text-3xl leading-tight">From tip to trusted story.</h3><p className="mt-3 text-sm leading-relaxed text-black/55">Every submission is checked against its source, rewritten in our own words, and queued for the live show.</p></div><div className="mt-8 flex flex-col gap-3 text-[10px] font-bold uppercase tracking-[0.14em] text-black/55"><div className="flex items-center gap-3 border-t border-black/10 pt-3"><span className="font-serif text-xl text-[#df5c3e]">01</span> Source verified</div><div className="flex items-center gap-3 border-t border-black/10 pt-3"><span className="font-serif text-xl text-[#df5c3e]">02</span> Editor reviewed</div><div className="flex items-center gap-3 border-t border-black/10 pt-3"><span className="font-serif text-xl text-[#df5c3e]">03</span> Audience decides</div></div></div>
           </div>
         </section>
