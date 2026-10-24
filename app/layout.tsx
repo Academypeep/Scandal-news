@@ -3,8 +3,8 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'The Edit — Culture, Drama & Live Stories',
-  description: 'The latest in drama, culture, music, style, and the stories worth talking about.',
+  title: 'Scandal — Culture, Drama & Live Stories',
+  description: 'Scandal brings you the latest drama, culture, music, style, highlights, and live stories worth talking about.',
   generator: 'v0.app',
   icons: {
     icon: [

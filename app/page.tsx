@@ -25,7 +25,7 @@ const stories = [
 ]
 
 const shows = [
-  { time: '09:00', label: 'The Daily Edit', host: 'with Lena Okafor', active: true },
+  { time: '09:00', label: 'Scandal Daily', host: 'with Lena Okafor', active: true },
   { time: '12:30', label: 'Culture Club', host: 'with Mateo Ruiz' },
   { time: '18:00', label: 'The Night Shift', host: 'with Ava Morgan' },
 ]
@@ -52,7 +52,7 @@ export default function Page() {
       <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-12">
         <header className="flex items-center justify-between border-b border-black/10 py-6">
           <button aria-label="Open menu" className="rounded-full p-2 transition hover:bg-black/5 lg:hidden"><Menu /></button>
-          <a href="#" className="font-serif text-3xl tracking-[-0.06em] sm:text-4xl">the edit<span className="text-[#df5c3e]">.</span></a>
+          <a href="#" className="font-serif text-3xl tracking-[-0.06em] sm:text-4xl">scandal<span className="text-[#df5c3e]">.</span></a>
           <nav className="hidden items-center gap-8 text-[11px] font-semibold uppercase tracking-[0.18em] lg:flex">
             {['For you', 'Drama', 'Culture', 'Highlights', 'Live'].map((item) => <button key={item} onClick={() => setActiveTab(item)} className={`transition ${activeTab === item ? 'text-[#df5c3e]' : 'text-black/55 hover:text-black'}`}>{item}</button>)}
           </nav>
@@ -69,7 +69,7 @@ export default function Page() {
 
         <section className="grid gap-9 py-10 lg:grid-cols-[minmax(0,1fr)_340px] lg:py-14">
           <div>
-            <div className="mb-8 flex items-end justify-between"><div><p className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[#df5c3e]"><Sparkles data-icon="inline-start" /> {activeTab === 'For you' ? 'Editor’s picks' : activeTab}</p><h1 className="max-w-2xl font-serif text-5xl leading-[0.95] tracking-[-0.055em] sm:text-7xl">What’s shaping the conversation.</h1></div><span className="hidden pb-1 text-xs text-black/40 sm:block">Thursday, October 23, 2026</span></div>
+            <div className="mb-8 flex items-end justify-between"><div><p className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[#df5c3e]"><Sparkles data-icon="inline-start" /> {activeTab === 'For you' ? 'Editor’s picks' : activeTab}</p><h1 className="max-w-2xl font-serif text-4xl leading-[0.96] tracking-[-0.055em] sm:text-7xl">What’s shaping the conversation.</h1></div><span className="hidden pb-1 text-xs text-black/40 sm:block">Thursday, October 23, 2026</span></div>
             {visibleStories.length === 0 ? <div className="border border-dashed border-black/20 p-12 text-center text-black/50">No stories found. Try another search.</div> : <div className="grid gap-5 sm:grid-cols-2">{visibleStories.map((story, index) => <article key={story.title} className={story.featured ? 'group sm:col-span-2' : 'group'}><div className={`relative overflow-hidden bg-black/10 ${story.featured ? 'aspect-[16/8]' : 'aspect-[4/3]'}`}><img src={story.image} alt="" className="size-full object-cover transition duration-500 group-hover:scale-105" /><div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />{story.featured && <div className="absolute bottom-0 left-0 max-w-2xl p-5 text-white sm:p-8"><p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[#ffb19b]">{story.category}</p><h2 className="font-serif text-3xl leading-none tracking-[-0.04em] sm:text-5xl">{story.title}</h2></div>}</div>{!story.featured && <div className="pt-4"><p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#df5c3e]">{story.category}</p><h2 className="font-serif text-2xl leading-[1.05] tracking-[-0.03em]">{story.title}</h2><p className="mt-2 text-sm leading-relaxed text-black/55">{story.excerpt}</p></div>}<div className="mt-4 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.13em] text-black/40"><span>{story.author} · {story.time}</span><button aria-label={`Save ${story.title}`} onClick={() => toggleSave(story.title)} className="rounded-full p-2 transition hover:bg-black/5"><Bookmark fill={saved.includes(story.title) ? 'currentColor' : 'none'} className={saved.includes(story.title) ? 'text-[#df5c3e]' : ''} /></button></div></article>)}</div>}
           </div>
 
@@ -85,7 +85,7 @@ export default function Page() {
         </section>
 
         <section className="border-t border-black/10 py-12"><div className="mb-7 flex items-end justify-between"><div><p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#df5c3e]">The quick read</p><h2 className="font-serif text-4xl tracking-[-0.05em]">More to know</h2></div><button className="hidden items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] sm:flex">View all <ArrowRight /></button></div><div className="grid gap-x-8 gap-y-6 md:grid-cols-3">{['The 10-minute guide to this week’s biggest debate', 'Inside the rooms where new ideas become movements', 'The highlights our editors are sending to friends'].map((title, index) => <article key={title} className="flex gap-4 border-t border-black/15 pt-4"><span className="font-serif text-4xl text-black/20">0{index + 1}</span><div><h3 className="font-serif text-xl leading-tight">{title}</h3><div className="mt-3 flex items-center gap-3 text-[10px] uppercase tracking-[0.14em] text-black/40"><Clock3 /> 4 min read <Share2 /></div></div></article>)}</div></section>
-        <footer className="flex flex-col gap-5 border-t border-black/10 py-8 text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45 sm:flex-row sm:items-center sm:justify-between"><span className="font-serif text-2xl normal-case tracking-[-0.06em] text-[#1c1c1a]">the edit<span className="text-[#df5c3e]">.</span></span><span>Independent culture, every day.</span><span>© 2026 The Edit</span></footer>
+        <footer className="flex flex-col gap-5 border-t border-black/10 py-8 text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45 sm:flex-row sm:items-center sm:justify-between"><span className="font-serif text-2xl normal-case tracking-[-0.06em] text-[#1c1c1a]">scandal<span className="text-[#df5c3e]">.</span></span><span>Independent culture, every day.</span><span>© 2026 Scandal</span></footer>
       </div>
     </main>
   )
