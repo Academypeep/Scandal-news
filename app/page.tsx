@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { MarketplacePanel } from '@/components/marketplace-panel'
 import {
   ArrowRight,
   Bookmark,
@@ -85,6 +86,7 @@ export default function Page() {
         </section>
 
         <section className="border-t border-black/10 py-12"><div className="mb-7 flex items-end justify-between"><div><p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#df5c3e]">The quick read</p><h2 className="font-serif text-4xl tracking-[-0.05em]">More to know</h2></div><button className="hidden items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] sm:flex">View all <ArrowRight /></button></div><div className="grid gap-x-8 gap-y-6 md:grid-cols-3">{['The 10-minute guide to this week’s biggest debate', 'Inside the rooms where new ideas become movements', 'The highlights our editors are sending to friends'].map((title, index) => <article key={title} className="flex gap-4 border-t border-black/15 pt-4"><span className="font-serif text-4xl text-black/20">0{index + 1}</span><div><h3 className="font-serif text-xl leading-tight">{title}</h3><div className="mt-3 flex items-center gap-3 text-[10px] uppercase tracking-[0.14em] text-black/40"><Clock3 /> 4 min read <Share2 /></div></div></article>)}</div></section>
+        <MarketplacePanel />
         <footer className="flex flex-col gap-5 border-t border-black/10 py-8 text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45 sm:flex-row sm:items-center sm:justify-between"><span className="font-serif text-2xl normal-case tracking-[-0.06em] text-[#1c1c1a]">scandal<span className="text-[#df5c3e]">.</span></span><span>Independent culture, every day.</span><span>© 2026 Scandal</span></footer>
       </div>
     </main>
