@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
+const submissionPackages = {
+  signal: { name: 'Signal', amount: 100 },
+  spotlight: { name: 'Spotlight', amount: 500 },
+  desk: { name: 'Desk Pass', amount: 1500 },
+} as const
+
 export async function POST(request: Request) {
   if (!process.env.STRIPE_SECRET_KEY) return NextResponse.json({ error: 'Payments are not configured yet.' }, { status: 503 })
 
@@ -9,7 +15,6 @@ export async function POST(request: Request) {
     const purpose = body?.purpose === 'reveal-vote' || body?.purpose === 'article-submission' ? body.purpose : null
     if (!purpose) return NextResponse.json({ error: 'A valid checkout purpose is required.' }, { status: 400 })
 
-    const submissionPackages = { signal: { name: 'Signal', amount: 100 }, spotlight: { name: 'Spotlight', amount: 500 }, desk: { name: 'Desk Pass', amount: 1500 } } as const
     const packageId = typeof body?.packageId === 'string' ? body.packageId : 'signal'
     const selectedPackage = submissionPackages[packageId as keyof typeof submissionPackages]
     if (purpose === 'article-submission' && !selectedPackage) return NextResponse.json({ error: 'Choose a valid submission package.' }, { status: 400 })
