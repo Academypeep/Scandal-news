@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import Stripe from 'stripe'
 import { sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 
@@ -16,11 +17,17 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const title = typeof body.title === 'string' ? body.title.trim() : ''
-    const excerpt = typeof body.excerpt === 'string' ? body.excerpt.trim() : ''
-    const authorName = typeof body.authorName === 'string' ? body.authorName.trim() : ''
-    const category = typeof body.category === 'string' ? body.category.trim().toUpperCase() : 'DRAMA'
-    const imageUrl = typeof body.imageUrl === 'string' ? body.imageUrl.trim() : ''
+    const sessionId = typeof body.sessionId === 'string' ? body.sessionId : ''
+    if (!sessionId || !process.env.STRIPE_SECRET_KEY) return NextResponse.json({ error: 'A completed submission payment is required.' }, { status: 402 })
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+    const session = await stripe.checkout.sessions.retrieve(sessionId)
+    if (session.payment_status !== 'paid' || session.metadata?.purpose !== 'article-submission') return NextResponse.json({ error: 'A completed submission payment is required.' }, { status: 402 })
+    const paidArticle = session.metadata
+    const title = typeof paidArticle.title === 'string' ? paidArticle.title.trim() : ''
+    const excerpt = typeof paidArticle.excerpt === 'string' ? paidArticle.excerpt.trim() : ''
+    const authorName = typeof paidArticle.authorName === 'string' ? paidArticle.authorName.trim() : ''
+    const category = typeof paidArticle.category === 'string' ? paidArticle.category.trim().toUpperCase() : 'DRAMA'
+    const imageUrl = ''
     const validImageUrl = imageUrl && (imageUrl.startsWith('https://') || imageUrl.startsWith('http://')) ? imageUrl : null
 
     if (!title || !excerpt || !authorName || title.length > 180 || excerpt.length > 600 || authorName.length > 80 || !categories.has(category)) {

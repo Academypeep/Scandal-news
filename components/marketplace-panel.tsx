@@ -16,20 +16,19 @@ export function MarketplacePanel() {
   ]
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('submission') !== 'unlocked') return
-    const saved = sessionStorage.getItem('scandal-submission')
-    if (!saved) return
-    sessionStorage.removeItem('scandal-submission')
-    fetch('/api/articles', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: saved })
-      .then(response => { if (!response.ok) throw new Error('Submission failed'); setSubmitted(true); setOpen(true) })
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('submission') !== 'unlocked') return
+    const sessionId = params.get('session_id')
+    if (!sessionId) { setError('Payment completed, but the submission receipt was missing. Please contact the editors.'); return }
+    fetch('/api/articles', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId }) })
+      .then(response => { if (!response.ok) throw new Error('Submission failed'); setSubmitted(true); setOpen(true); window.history.replaceState({}, '', '/') })
       .catch(() => setError('Payment went through, but we could not send the story. Please contact the editors.'))
   }, [])
 
   async function submit(event: FormEvent) {
     event.preventDefault()
     setError('')
-    sessionStorage.setItem('scandal-submission', JSON.stringify(form))
-    const response = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ purpose: 'article-submission', packageId }) })
+    const response = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ purpose: 'article-submission', packageId, article: form }) })
     const result = await response.json()
     if (!response.ok || !result.url) { sessionStorage.removeItem('scandal-submission'); setError(result.error ?? 'Checkout is unavailable right now.'); return }
     window.location.assign(result.url)
