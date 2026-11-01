@@ -160,6 +160,7 @@
 
   body {
     font-family: Arial, Helvetica, sans-serif;
+    overflow-x: hidden;
   }
 
   button, a {
@@ -171,5 +172,37 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@media (max-width: 380px) {
+  main > div {
+    padding-inline: 12px;
+  }
+
+  main header {
+    padding-block: 16px;
+  }
+
+  main header > a {
+    font-size: 1.75rem;
+  }
+
+  main h1 {
+    font-size: 2.25rem;
+  }
+
+  main h2 {
+    overflow-wrap: anywhere;
+  }
+
+  main section {
+    padding-block: 32px;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  main > div {
+    padding-inline: 28px;
   }
 }
