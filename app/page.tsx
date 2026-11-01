@@ -37,14 +37,18 @@ export default function Page() {
   const [saved, setSaved] = useState<string[]>([])
   const [showSearch, setShowSearch] = useState(false)
   const [playing, setPlaying] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const [liveVotes, setLiveVotes] = useState(12842)
   const [revealed, setRevealed] = useState(false)
 
   const visibleStories = useMemo(() => {
-    if (!query.trim()) return stories
-    const value = query.toLowerCase()
-    return stories.filter((story) => `${story.title} ${story.category} ${story.excerpt}`.toLowerCase().includes(value))
-  }, [query])
+    const value = query.toLowerCase().trim()
+    return stories.filter((story) => {
+      const matchesTab = activeTab === 'For you' || activeTab === 'Highlights' || activeTab === 'Live' || story.category === activeTab.toUpperCase()
+      const matchesSearch = !value || `${story.title} ${story.category} ${story.excerpt}`.toLowerCase().includes(value)
+      return matchesTab && matchesSearch
+    })
+  }, [activeTab, query])
 
   const toggleSave = (title: string) => setSaved((current) => current.includes(title) ? current.filter((item) => item !== title) : [...current, title])
 
@@ -63,7 +67,7 @@ export default function Page() {
     <main className="min-h-screen bg-[#f5f4f0] text-[#1c1c1a] dark:bg-[#171716] dark:text-[#f5f4f0]">
       <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-12">
         <header className="flex items-center justify-between border-b border-black/10 py-6">
-          <button aria-label="Open menu" className="rounded-full p-2 transition hover:bg-black/5 lg:hidden"><Menu /></button>
+          <button aria-label={menuOpen ? 'Close menu' : 'Open menu'} onClick={() => setMenuOpen(!menuOpen)} className="rounded-full p-2 transition hover:bg-black/5 lg:hidden">{menuOpen ? <X /> : <Menu />}</button>
           <a href="#" className="font-serif text-3xl tracking-[-0.06em] sm:text-4xl">scandal<span className="text-[#df5c3e]">.</span></a>
           <nav className="hidden items-center gap-8 text-[11px] font-semibold uppercase tracking-[0.18em] lg:flex">
             {['For you', 'Drama', 'Culture', 'Highlights', 'Live'].map((item) => <button key={item} onClick={() => setActiveTab(item)} className={`transition ${activeTab === item ? 'text-[#df5c3e]' : 'text-black/55 hover:text-black'}`}>{item}</button>)}
@@ -71,7 +75,7 @@ export default function Page() {
           <div className="flex items-center gap-2">
             {showSearch && <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Search stories" placeholder="Search" className="w-28 border-b border-black/30 bg-transparent px-1 py-2 text-sm outline-none sm:w-40" />}
             <button aria-label={showSearch ? 'Close search' : 'Search'} onClick={() => { setShowSearch(!showSearch); if (showSearch) setQuery('') }} className="rounded-full p-2 transition hover:bg-black/5">{showSearch ? <X /> : <Search />}</button>
-            <button className="hidden rounded-full bg-[#1c1c1a] px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-[#df5c3e] sm:block">Subscribe</button>
+            <a href="#community-desk" className="hidden rounded-full bg-[#1c1c1a] px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-[#df5c3e] sm:block">Subscribe</a>
           </div>
         </header>
 
@@ -96,8 +100,8 @@ export default function Page() {
           </div>
         </section>
 
-        <section className="border-t border-black/10 py-12"><div className="mb-7 flex items-end justify-between"><div><p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#df5c3e]">The quick read</p><h2 className="font-serif text-4xl tracking-[-0.05em]">More to know</h2></div><button className="hidden items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] sm:flex">View all <ArrowRight /></button></div><div className="grid gap-x-8 gap-y-6 md:grid-cols-3">{['The 10-minute guide to this week’s biggest debate', 'Inside the rooms where new ideas become movements', 'The highlights our editors are sending to friends'].map((title, index) => <article key={title} className="flex gap-4 border-t border-black/15 pt-4"><span className="font-serif text-4xl text-black/20">0{index + 1}</span><div><h3 className="font-serif text-xl leading-tight">{title}</h3><div className="mt-3 flex items-center gap-3 text-[10px] uppercase tracking-[0.14em] text-black/40"><Clock3 /> 4 min read <Share2 /></div></div></article>)}</div></section>
-        <MarketplacePanel />
+        <section className="border-t border-black/10 py-12"><div className="mb-7 flex items-end justify-between"><div><p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#df5c3e]">The quick read</p><h2 className="font-serif text-4xl tracking-[-0.05em]">More to know</h2></div><button onClick={() => setActiveTab('For you')} className="hidden items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] sm:flex">View all <ArrowRight /></button></div><div className="grid gap-x-8 gap-y-6 md:grid-cols-3">{['The 10-minute guide to this week’s biggest debate', 'Inside the rooms where new ideas become movements', 'The highlights our editors are sending to friends'].map((title, index) => <article key={title} className="flex gap-4 border-t border-black/15 pt-4"><span className="font-serif text-4xl text-black/20">0{index + 1}</span><div><h3 className="font-serif text-xl leading-tight">{title}</h3><div className="mt-3 flex items-center gap-3 text-[10px] uppercase tracking-[0.14em] text-black/40"><Clock3 /> 4 min read <Share2 /></div></div></article>)}</div></section>
+        <div id="community-desk"><MarketplacePanel /></div>
         <footer className="flex flex-col gap-5 border-t border-black/10 py-8 text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45 sm:flex-row sm:items-center sm:justify-between"><span className="font-serif text-2xl normal-case tracking-[-0.06em] text-[#1c1c1a]">scandal<span className="text-[#df5c3e]">.</span></span><span>Independent culture, every day.</span><span>© 2026 Scandal</span></footer>
       </div>
     </main>
