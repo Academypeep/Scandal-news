@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { createHash } from "node:crypto"
 import { sql } from "drizzle-orm"
+import { headers } from "next/headers"
+import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 
 const PACKAGES = {
@@ -20,6 +22,8 @@ const paddleBaseUrl = process.env.PADDLE_ENVIRONMENT === "sandbox" ? "https://sa
 
 export async function POST(request: Request) {
   try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return NextResponse.json({ error: "Sign in before starting checkout." }, { status: 401 })
     const contentLength = Number(request.headers.get("content-length") ?? 0)
     if (contentLength > 20_000) return NextResponse.json({ error: "Submission is too large." }, { status: 413 })
     const body = await request.json()
@@ -59,7 +63,7 @@ export async function POST(request: Request) {
         items: [{ price_id: selected.priceId, quantity: 1 }],
         collection_mode: "automatic",
         checkout: { url: `${origin}/?checkout=complete&transaction_id={transaction_id}` },
-        custom_data: { packageId, title, category, excerpt, author },
+        custom_data: { packageId, title, category: category.toUpperCase(), excerpt, author, userId: session.user.id },
       }),
     })
 

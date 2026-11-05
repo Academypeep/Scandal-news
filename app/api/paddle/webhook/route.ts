@@ -38,15 +38,15 @@ export async function POST(request: Request) {
 
     const fulfilled = await db.transaction(async (tx) => {
       const inserted = await tx.execute(sql`
-        INSERT INTO public.scandal_payments (provider, provider_transaction_id, package_id, status, payload)
-        VALUES ('paddle', ${transactionId}, ${customData.packageId ?? "signal"}, 'completed', ${JSON.stringify(event)}::jsonb)
+        INSERT INTO public.scandal_payments (provider, provider_transaction_id, package_id, status, payload, user_id)
+        VALUES ('paddle', ${transactionId}, ${customData.packageId ?? "signal"}, 'completed', ${JSON.stringify(event)}::jsonb, ${customData.userId ?? null})
         ON CONFLICT (provider, provider_transaction_id) DO NOTHING
         RETURNING id
       `)
       if (!inserted.rows.length) return false
       await tx.execute(sql`
-        INSERT INTO public.scandal_articles (title, category, excerpt, author_name, image_url, status)
-        VALUES (${customData.title}, ${category}, ${customData.excerpt ?? ""}, ${customData.author ?? "Anonymous"}, NULL, 'pending')
+        INSERT INTO public.scandal_articles (title, category, excerpt, author_name, image_url, status, user_id)
+        VALUES (${customData.title}, ${category}, ${customData.excerpt ?? ""}, ${customData.author ?? "Anonymous"}, NULL, 'pending', ${customData.userId ?? null})
       `)
       return true
     })
