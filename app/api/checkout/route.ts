@@ -1,60 +1,66 @@
-import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
+import { NextResponse } from "next/server"
+import { randomUUID } from "node:crypto"
 
-const submissionPackages = {
-  signal: { name: 'Signal', amount: 100 },
-  spotlight: { name: 'Spotlight', amount: 500 },
-  desk: { name: 'Desk Pass', amount: 1500 },
+const PACKAGES = {
+  signal: { priceId: process.env.PADDLE_SIGNAL_PRICE_ID, name: "Signal submission" },
+  spotlight: { priceId: process.env.PADDLE_SPOTLIGHT_PRICE_ID, name: "Spotlight submission" },
+  desk: { priceId: process.env.PADDLE_DESK_PRICE_ID, name: "Desk submission" },
 } as const
 
+type PackageId = keyof typeof PACKAGES
+
+function isPackageId(value: unknown): value is PackageId {
+  return typeof value === "string" && value in PACKAGES
+}
+
 export async function POST(request: Request) {
-  if (!process.env.STRIPE_SECRET_KEY) return NextResponse.json({ error: 'Payments are not configured yet.' }, { status: 503 })
-
   try {
-    const body = await request.json().catch(() => ({}))
-    const purpose = body?.purpose === 'reveal-vote' || body?.purpose === 'article-submission' ? body.purpose : null
-    if (!purpose) return NextResponse.json({ error: 'A valid checkout purpose is required.' }, { status: 400 })
+    const body = await request.json()
+    const packageId = body?.packageId
+    const title = typeof body?.title === "string" ? body.title.trim() : ""
+    const category = typeof body?.category === "string" ? body.category.trim() : ""
+    const excerpt = typeof body?.excerpt === "string" ? body.excerpt.trim() : ""
+    const author = typeof body?.author === "string" ? body.author.trim() : ""
 
-    const packageId = typeof body?.packageId === 'string' ? body.packageId : 'signal'
-    const article = body?.article && typeof body.article === 'object' ? body.article : null
-    const selectedPackage = submissionPackages[packageId as keyof typeof submissionPackages]
-    if (purpose === 'article-submission' && !selectedPackage) return NextResponse.json({ error: 'Choose a valid submission package.' }, { status: 400 })
-    if (purpose === 'article-submission') {
-      const title = typeof article?.title === 'string' ? article.title.trim() : ''
-      const excerpt = typeof article?.excerpt === 'string' ? article.excerpt.trim() : ''
-      const authorName = typeof article?.authorName === 'string' ? article.authorName.trim() : ''
-      const category = typeof article?.category === 'string' ? article.category.trim().toUpperCase() : ''
-      if (!title || !excerpt || !authorName || title.length > 180 || excerpt.length > 600 || authorName.length > 80 || !['DRAMA', 'CULTURE', 'HIGHLIGHTS', 'LIVE'].includes(category)) {
-        return NextResponse.json({ error: 'Complete the submission form before checkout.' }, { status: 400 })
-      }
+    if (!isPackageId(packageId) || !title || title.length > 160 || !category || !excerpt || excerpt.length > 600 || !author || author.length > 80) {
+      return NextResponse.json({ error: "Valid package and submission details are required." }, { status: 400 })
     }
 
-    const productName = purpose === 'article-submission' ? `Scandal ${selectedPackage?.name ?? 'Signal'} submission package` : 'Scandal reveal vote'
-    const amount = purpose === 'article-submission' ? (selectedPackage?.amount ?? 100) : 100
+    const selected = PACKAGES[packageId]
+    if (!selected.priceId) {
+      return NextResponse.json({ error: "This package is not configured for checkout yet." }, { status: 503 })
+    }
+    if (!process.env.PADDLE_API_KEY) {
+      return NextResponse.json({ error: "Paddle checkout is not configured." }, { status: 503 })
+    }
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-    const configuredOrigin = process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null
-    const origin = configuredOrigin ?? new URL(request.url).origin
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      line_items: [{ price_data: { currency: 'usd', product_data: { name: productName }, unit_amount: amount }, quantity: 1 }],
-      success_url: purpose === 'article-submission' ? `${origin}/?submission=unlocked&session_id={CHECKOUT_SESSION_ID}` : `${origin}/?reveal=unlocked`,
-      cancel_url: purpose === 'article-submission' ? `${origin}/?submission=cancelled` : `${origin}/?reveal=cancelled`,
-      metadata: {
-        purpose,
-        ...(purpose === 'article-submission' && article ? {
-          title: String(article.title).trim(),
-          excerpt: String(article.excerpt).trim(),
-          authorName: String(article.authorName).trim(),
-          category: String(article.category).trim().toUpperCase(),
-          packageId,
-        } : {}),
+    const origin = new URL(request.url).origin
+    const response = await fetch("https://api.paddle.com/transactions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.PADDLE_API_KEY}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": `scandal-${randomUUID()}`,
       },
-      idempotencyKey: `scandal_${purpose}_${crypto.randomUUID()}`,
-      integration_identifier: `scandal_checkout_${Math.random().toString(36).slice(2, 10)}`,
+      body: JSON.stringify({
+        items: [{ price_id: selected.priceId, quantity: 1 }],
+        collection_mode: "automatic",
+        checkout: { url: `${origin}/?checkout=complete&transaction_id={transaction_id}` },
+        custom_data: { packageId, title, category, excerpt, author },
+      }),
     })
-    return NextResponse.json({ url: session.url })
-  } catch {
-    return NextResponse.json({ error: 'We could not start checkout. Please try again.' }, { status: 500 })
+
+    const payload = await response.json()
+    if (!response.ok) {
+      console.error("[v0] Paddle transaction creation failed", { status: response.status, requestId: payload?.meta?.request_id })
+      return NextResponse.json({ error: "Paddle could not create checkout. Please retry." }, { status: 502 })
+    }
+
+    const checkoutUrl = payload?.data?.checkout?.url
+    if (!checkoutUrl) return NextResponse.json({ error: "Paddle returned no checkout URL." }, { status: 502 })
+    return NextResponse.json({ url: checkoutUrl })
+  } catch (error) {
+    console.error("[v0] Paddle checkout error", error instanceof Error ? error.message : "unknown")
+    return NextResponse.json({ error: "Unable to start checkout." }, { status: 500 })
   }
 }
