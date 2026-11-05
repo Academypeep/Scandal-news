@@ -23,23 +23,34 @@ export async function POST(request: Request) {
     const event = JSON.parse(rawBody)
     const transaction = event?.data
     const transactionId = transaction?.id
+    const eventType = event?.event_type
     const customData = transaction?.custom_data
-    if (!transactionId || !customData?.title || event?.event_type !== "transaction.completed") {
+    if (!transactionId) return NextResponse.json({ received: true })
+    if (eventType !== "transaction.completed") {
+      const status = eventType === "transaction.canceled" ? "canceled" : eventType === "transaction.payment_failed" ? "failed" : eventType === "transaction.billed" ? "billed" : null
+      if (status) await db.execute(sql`UPDATE public.scandal_payments SET status = ${status}, payload = ${JSON.stringify(event)}::jsonb WHERE provider = 'paddle' AND provider_transaction_id = ${transactionId}`)
       return NextResponse.json({ received: true })
     }
+    if (!customData?.title) return NextResponse.json({ error: "Missing submission metadata" }, { status: 400 })
 
-    const inserted = await db.execute(sql`
-      INSERT INTO public.scandal_payments (provider, provider_transaction_id, package_id, status, payload)
-      VALUES ('paddle', ${transactionId}, ${customData.packageId ?? "signal"}, 'completed', ${JSON.stringify(event)}::jsonb)
-      ON CONFLICT (provider, provider_transaction_id) DO NOTHING
-      RETURNING id
-    `)
-    if (!inserted.rows.length) return NextResponse.json({ received: true, duplicate: true })
+    const category = typeof customData.category === "string" ? customData.category.toUpperCase() : ""
+    if (!['DRAMA', 'CULTURE', 'HIGHLIGHTS', 'LIVE'].includes(category)) return NextResponse.json({ error: "Invalid submission category" }, { status: 400 })
 
-    await db.execute(sql`
-      INSERT INTO public.scandal_articles (title, category, excerpt, author_name, image_url, status)
-      VALUES (${customData.title}, ${customData.category ?? "DRAMA"}, ${customData.excerpt ?? ""}, ${customData.author ?? "Anonymous"}, NULL, 'pending')
-    `)
+    const fulfilled = await db.transaction(async (tx) => {
+      const inserted = await tx.execute(sql`
+        INSERT INTO public.scandal_payments (provider, provider_transaction_id, package_id, status, payload)
+        VALUES ('paddle', ${transactionId}, ${customData.packageId ?? "signal"}, 'completed', ${JSON.stringify(event)}::jsonb)
+        ON CONFLICT (provider, provider_transaction_id) DO NOTHING
+        RETURNING id
+      `)
+      if (!inserted.rows.length) return false
+      await tx.execute(sql`
+        INSERT INTO public.scandal_articles (title, category, excerpt, author_name, image_url, status)
+        VALUES (${customData.title}, ${category}, ${customData.excerpt ?? ""}, ${customData.author ?? "Anonymous"}, NULL, 'pending')
+      `)
+      return true
+    })
+    if (!fulfilled) return NextResponse.json({ received: true, duplicate: true })
     return NextResponse.json({ received: true })
   } catch (error) {
     console.error("[v0] Paddle webhook fulfillment failed", error instanceof Error ? error.message : "unknown")
